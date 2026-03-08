@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Brief {
+  id         String   @id @default(cuid())
+  wizardData Json
+  result     Json?
+  createdAt  DateTime @default(now())
+  lead       Lead?
+  files      UploadedFile[]
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  email     String
+  name      String
+  company   String
+  briefId   String   @unique
+  brief     Brief    @relation(fields: [briefId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model UploadedFile {
+  id        String   @id @default(cuid())
+  filename  String
+  path      String
+  mimeType  String
+  step      Int
+  briefId   String?
+  brief     Brief?   @relation(fields: [briefId], references: [id])
+  sessionId String
+  createdAt DateTime @default(now())
+}
