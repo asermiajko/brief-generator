@@ -1,6 +1,26 @@
-import puppeteer from "puppeteer";
+import chromium from "@sparticuz/chromium";
+import puppeteer, { type Browser } from "puppeteer-core";
 import { BriefResult } from "@/types/wizard";
 import { markdownToHtml, escapeHtml } from "@/lib/markdown";
+
+async function launchBrowser(): Promise<Browser> {
+  if (process.env.RAILWAY_ENVIRONMENT) {
+    return puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+  }
+
+  return puppeteer.launch({
+    headless: true,
+    executablePath:
+      process.env.CHROME_PATH ||
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
+}
 
 function briefToHtml(brief: BriefResult): string {
   const sectionsHtml = brief.sections
@@ -123,10 +143,7 @@ function briefToHtml(brief: BriefResult): string {
 export async function generatePdf(brief: BriefResult): Promise<Buffer> {
   const html = briefToHtml(brief);
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  const browser = await launchBrowser();
 
   try {
     const page = await browser.newPage();
